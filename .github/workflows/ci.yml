@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    # macOS-only tool: the tests exercise real ACLs, chflags, and APFS
+    # case-insensitivity, none of which exist on the Linux runners.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `version` input: pnpm/action-setup reads the `packageManager` field
+      # in package.json, so the pin lives in one place.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm test
+      - run: pnpm run build
