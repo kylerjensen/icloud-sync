@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `version` input: pnpm/action-setup reads the `packageManager` field
+      # in package.json, so the pin lives in one place.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm test
+
+      - name: Check the tag matches package.json
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          declared="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$declared" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $declared" >&2
+            exit 1
+          fi
+
+      # The tarball ships the bundle, so the formula needs only `node` at
+      # runtime — no pnpm and no node_modules install.
+      - name: Build the release tarball
+        id: tarball
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          staging="icloud-sync-${version}"
+          pnpm run build
+          mkdir -p "$staging"
+          cp -R dist "$staging/dist"
+          cp README.md LICENSE package.json "$staging/"
+          tar -czf "${staging}.tar.gz" "$staging"
+          echo "path=${staging}.tar.gz" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(shasum -a 256 "${staging}.tar.gz" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "${{ steps.tarball.outputs.path }}" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
+
+      # The formula needs this sha256, so surface it rather than making someone
+      # download the asset to compute it.
+      - name: Report the formula sha256
+        run: |
+          {
+            echo '## Homebrew formula values'
+            echo
+            echo '```ruby'
+            echo "url \"https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${{ steps.tarball.outputs.path }}\""
+            echo "sha256 \"${{ steps.tarball.outputs.sha256 }}\""
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
