@@ -1,7 +1,12 @@
 import { chmod } from "node:fs/promises";
 import { build } from "esbuild";
 
-const outfile = "dist/icloud-sync.js";
+// `.mjs`, not `.js`: the bundle is ESM, and a bare `.js` is only treated as ESM
+// when the nearest package.json says `"type": "module"`. The extracted release
+// tarball happens to include one, but anything that relocates the bundle on its
+// own — a Homebrew `libexec`, a manual copy — would break with
+// "Cannot use import statement outside a module". `.mjs` is unambiguous.
+const outfile = "dist/icloud-sync.mjs";
 
 /**
  * Bundle to a single self-contained file so the Homebrew formula needs only

@@ -27,10 +27,10 @@
     "node": ">=20"
   },
   "bin": {
-    "icloud-sync": "dist/icloud-sync.js"
+    "icloud-sync": "dist/icloud-sync.mjs"
   },
   "files": [
-    "dist/icloud-sync.js",
+    "dist/icloud-sync.mjs",
     "README.md",
     "LICENSE"
   ],

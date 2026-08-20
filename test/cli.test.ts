@@ -9,7 +9,7 @@ import { makeSandbox, snapshotTree, useSandbox, writeFile } from "./helpers.ts";
 
 const run = promisify(execFile);
 const repoRoot = path.resolve(import.meta.dirname, "..");
-const bundle = path.join(repoRoot, "dist", "icloud-sync.js");
+const bundle = path.join(repoRoot, "dist", "icloud-sync.mjs");
 
 before(async () => {
   await run(process.execPath, [path.join(repoRoot, "scripts", "build.mjs")], { cwd: repoRoot });

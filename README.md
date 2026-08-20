@@ -162,7 +162,7 @@ behind, preflight detects it and prints the exact `chown` command to fix it.
 pnpm install
 pnpm run typecheck
 pnpm test
-pnpm run build      # bundles to dist/icloud-sync.js
+pnpm run build      # bundles to dist/icloud-sync.mjs
 ```
 
 The build produces one self-contained file so the Homebrew formula needs only
